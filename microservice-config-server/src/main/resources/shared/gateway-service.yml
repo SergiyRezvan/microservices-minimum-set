@@ -1,0 +1,56 @@
+server:
+  port: 8081
+management:
+  endpoints:
+    gateway:
+      enabled: true
+    web:
+      exposure:
+        include:
+          gateway
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/microservices
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: http://localhost:8081, http://epuakhaw0846:8081
+            allowedMethods:
+              - GET
+              - POST
+            allowedHeaders:
+              - Content-Type
+      metrics:
+        enabled: true
+      httpclient:
+        connect-timeout: 20000
+        response-timeout: 20000
+      routes:
+        - id: path_route
+          uri: lb://USER-SERVICE/**
+          predicates:
+            - Path=/users/**
+          filters:
+            - RewritePath=/users/, /userService/
+        - id: auth_service_route
+          uri: http://localhost:8180
+          predicates:
+            - Path=/uaa/token
+          filters:
+            - StripPrefix=2
+            - RewritePath=/, /realms/microservices/protocol/openid-connect/token
+        - id: usernotes_service_route
+          uri: lb://USERNOTES-SERVICE/**
+          predicates:
+            - Path=/notes/**
+          filters:
+            - RewritePath=/notes/, /userNotes/

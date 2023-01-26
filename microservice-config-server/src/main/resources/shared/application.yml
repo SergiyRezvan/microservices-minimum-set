@@ -1,0 +1,13 @@
+eureka:
+  instance:
+    prefer-ip-address: false
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/ #where our registry server is located
+
+spring:
+  output:
+  ansi:
+    enabled: DETECT
+  zipkin:
+    baseUrl: http://localhost:9411

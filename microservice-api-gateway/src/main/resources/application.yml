@@ -1,0 +1,15 @@
+logging:
+  level:
+    org.springframework: TRACE
+    org.springframework.web.reactive.function.client: TRACE
+
+spring:
+  application:
+    name: gateway-service
+  config:
+    import: configserver:http://localhost:8888
+  cloud:
+    config:
+      fail-fast: true #the service will not run if it can't reach the config-service
+      password: 1234 #password of the config-service
+      username: user #username of the config-service
