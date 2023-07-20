@@ -1,0 +1,43 @@
+eureka:
+  instance:
+    prefer-ip-address: false
+  client:
+    serviceUrl:
+      defaultZone: http://service-registry-server:8761/eureka/ #where our registry server is located
+
+spring:
+  output:
+  ansi:
+    enabled: DETECT
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-components: always
+      show-details: always
+      probes:
+        enabled: true
+  tracing:
+    enabled: true
+    propagation:
+      type: W3C
+    sampling:
+      probability: 1.0
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+    mongo:
+      command:
+        enabled: true
+  zipkin:
+    tracing:
+      endpoint: http://tempo:9411/api/v2/spans

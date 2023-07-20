@@ -1,0 +1,7 @@
+server:
+  port: 8083
+  servlet:
+    contextPath: /userService
+
+mongo:
+  url: mongodb://user_service:secret@mongodb:27017/data?authSource=data&authMechanism=SCRAM-SHA-256

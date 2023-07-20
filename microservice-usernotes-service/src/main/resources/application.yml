@@ -1,0 +1,15 @@
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  level:
+    org.springframework: INFO
+spring:
+  application:
+    name: usernotes-service
+  config:
+    import: configserver:http://config-server:8888
+  cloud:
+    config:
+      fail-fast: true #the service will not run if it can't reach the config-service
+      password: 1234 #password of the config-service
+      username: user #username of the config-service
