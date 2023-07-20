@@ -1,9 +1,7 @@
 version: '3.9'
 
 networks:
-  keycloak-net:
-  mongo-db-net:
-  monitoring-net:
+  microservices-net:
 
 volumes:
   keycloak-datastore:
@@ -15,7 +13,7 @@ services:
     volumes:
       - keycloak-datastore:/var/lib/postresql/data
     networks:
-      - keycloak-net
+      - microservices-net
     ports:
       - "25432:5432"
     environment:
@@ -25,15 +23,16 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:20.0.2
+    extra_hosts: ['host.docker.internal:host-gateway']
     depends_on:
       - keycloak-db
     networks:
-      - keycloak-net
+      - microservices-net
     ports:
       - "8180:8080"
       - "8686:8686"
     volumes:
-      - ./docker/keycloak:/opt/jboss/keycloak/imports
+      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm.json
     environment:
       KC_DB:   postgres
       KC_DB_URL_HOST:     keycloak-db
@@ -48,12 +47,15 @@ services:
       KC_LOG_GELF_LEVEL: INFO
       KC_LOG_LEVEL: INFO
       JAVA_OPTS: -Djava.net.preferIPv4Stack=true -agentlib:jdwp=transport=dt_socket,address=8686,server=y,suspend=n
-    command: ["start-dev", "-Dkeycloak.import=/opt/jboss/keycloak/imports/realm-export.json"]
+    command:
+      - start-dev
+      - --import-realm
   mongodb:
     image: mongo:latest
     restart: always
+    extra_hosts: ['host.docker.internal:host-gateway']
     networks:
-        - mongo-db-net
+        - microservices-net
     ports:
         - "27017:27017"
     environment:
@@ -66,8 +68,9 @@ services:
   mongo-express:
     image: mongo-express:latest
     restart: always
+    extra_hosts: ['host.docker.internal:host-gateway']
     networks:
-        - mongo-db-net
+        - microservices-net
     ports:
       - 8089:8081
     environment:
@@ -79,18 +82,19 @@ services:
     extra_hosts: ['host.docker.internal:host-gateway']
     command: [ "-config.file=/etc/tempo.yaml" ]
     networks: 
-        - monitoring-net
+        - microservices-net
     volumes:
         - ./docker/tempo/tempo-local.yaml:/etc/tempo.yaml:ro
         - ./tempo-data:/tmp/tempo
     ports:
         - "14268"  # jaeger ingest
         - "9411:9411" # zipkin
+        - "3200:3200"
   loki:
     image: grafana/loki
     extra_hosts: ['host.docker.internal:host-gateway']
     networks: 
-        - monitoring-net
+        - microservices-net
     command: [ "-config.file=/etc/loki/local-config.yaml" ]
     ports:
         - "3100:3100"                                   # loki needs to be exposed so it receives logs
@@ -103,7 +107,7 @@ services:
     image: prom/prometheus
     extra_hosts: ['host.docker.internal:host-gateway']
     networks: 
-        - monitoring-net
+        - microservices-net
     command:
         - --enable-feature=exemplar-storage
         - --config.file=/etc/prometheus/prometheus.yml
@@ -115,7 +119,7 @@ services:
     image: grafana/grafana
     extra_hosts: ['host.docker.internal:host-gateway']
     networks: 
-        - monitoring-net
+        - microservices-net
     volumes:
         - ./docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
         - ./docker/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
@@ -125,3 +129,91 @@ services:
         - GF_AUTH_DISABLE_LOGIN_FORM=true
     ports:
         - "3000:3000"
+  config-server:
+    build: ./microservice-config-server
+    extra_hosts: ['host.docker.internal:host-gateway']
+    networks:
+      - microservices-net
+    ports:
+      - "8888:8888"
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8888/actuator/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  service-registry-server:
+    build: ./microservice-registry-service
+    extra_hosts: ['host.docker.internal:host-gateway']
+    networks:
+      - microservices-net
+    depends_on:
+      config-server:
+        condition: service_healthy
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8761/actuator/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  api-gateway-server:
+    build: ./microservice-api-gateway
+    extra_hosts: ['host.docker.internal:host-gateway']
+    networks:
+      - microservices-net
+    depends_on:
+      keycloak:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+      service-registry-server:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  user-service:
+    build: ./microservice-user-service
+    extra_hosts: ['host.docker.internal:host-gateway']
+    networks:
+      - microservices-net
+    depends_on:
+      config-server:
+        condition: service_healthy
+      service-registry-server:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      loki:
+        condition: service_started
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8083/userService/actuator/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "8083:8083"
+  user-notes-service:
+    build: ./microservice-usernotes-service
+    extra_hosts: ['host.docker.internal:host-gateway']
+    networks:
+      - microservices-net
+    depends_on:
+      config-server:
+        condition: service_healthy
+      service-registry-server:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      loki:
+        condition: service_started
+    ports:
+      - "8084:8084"
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8084/userNotes/actuator/health || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -30,6 +30,8 @@ public class SecurityConfiguration {
                 .and()
                 .authorizeExchange().pathMatchers("/notes/**").authenticated()
                 .and()
+                .authorizeExchange().pathMatchers("/actuator/**").permitAll()
+                .and()
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .oauth2ResourceServer()
                 .jwt();

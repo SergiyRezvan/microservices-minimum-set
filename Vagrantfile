@@ -23,13 +23,26 @@ Vagrant.configure(2) do |config|
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
+
+  #keycloak
   config.vm.network "forwarded_port", guest: 8180, host: 8180
-  config.vm.network "forwarded_port", guest: 27017, host: 27018
+  #mongo
+  #config.vm.network "forwarded_port", guest: 27018, host: 27018
   config.vm.network "forwarded_port", guest: 8089, host: 8089
+  # zipkin
   config.vm.network "forwarded_port", guest: 9411, host: 9411
+  # loki
   config.vm.network "forwarded_port", guest: 3100, host: 3100
+  # prometheus
   config.vm.network "forwarded_port", guest: 9090, host: 9090
+  # grafana
   config.vm.network "forwarded_port", guest: 3000, host: 3000
+
+  #api gateway
+  config.vm.network "forwarded_port", guest: 8081, host: 8081
+
+  # poratainer
+  config.vm.network "forwarded_port", guest: 9000, host: 9000
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -55,7 +68,7 @@ Vagrant.configure(2) do |config|
      vb.gui = true
   
      # Customize the amount of memory on the VM:
-     vb.memory = "1024"
+     vb.memory = "8192"
    end
   #
   # View the documentation for the provider you are using for more

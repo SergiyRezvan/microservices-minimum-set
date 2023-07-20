@@ -2,6 +2,7 @@
 
 yum update
 yum install wget -y
+yum install vim -y
 
 # install docker
 yum install -y yum-utils

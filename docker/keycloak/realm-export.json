@@ -299,7 +299,6 @@
         }
       ],
       "security-admin-console": [],
-      "auth-server": [],
       "admin-cli": [],
       "account-console": [],
       "broker": [

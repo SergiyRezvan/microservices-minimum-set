@@ -4,25 +4,4 @@ server:
     contextPath: /userService
 
 mongo:
-  url: mongodb://user_service:secret@localhost:27018/data?authSource=data&authMechanism=SCRAM-SHA-256
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-components: always
-      show-details: always
-      probes:
-        enabled: true
-  tracing:
-    sampling:
-      probability: 1.0
-  metrics:
-    distribution:
-      percentiles-histogram:
-        http:
-          server:
-            requests: true
+  url: mongodb://user_service:secret@mongodb:27017/data?authSource=data&authMechanism=SCRAM-SHA-256

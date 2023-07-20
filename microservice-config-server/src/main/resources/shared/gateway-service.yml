@@ -4,17 +4,13 @@ management:
   endpoints:
     gateway:
       enabled: true
-    web:
-      exposure:
-        include:
-          gateway
 
 spring:
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/realms/microservices
+          issuer-uri: http://keycloak:8080/realms/microservices
   cloud:
     gateway:
       discovery:
@@ -23,7 +19,7 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: http://localhost:8081, http://epuakhaw0846:8081
+            allowedOrigins: http://localhost:8081, http://localhost:8081
             allowedMethods:
               - GET
               - POST
@@ -42,7 +38,7 @@ spring:
           filters:
             - RewritePath=/users/, /userService/
         - id: auth_service_route
-          uri: http://localhost:8180
+          uri: http://keycloak:8080
           predicates:
             - Path=/uaa/token
           filters:

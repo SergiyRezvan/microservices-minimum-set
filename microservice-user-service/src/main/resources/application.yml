@@ -2,12 +2,12 @@ logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
   level:
-    org.springframework: DEBUG
+    org.springframework: INFO
 spring:
   application:
     name: user-service
   config:
-    import: configserver:http://localhost:8888
+    import: configserver:http://config-server:8888
   cloud:
     config:
       fail-fast: true #the service will not run if it can't reach the config-service
